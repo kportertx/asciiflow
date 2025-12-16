@@ -10,6 +10,14 @@ ASCIIFlow is a client-side only web based application for drawing ASCII diagrams
   </picture>
 </p>
 
+## Terminal Colors
+
+ASCIIFlow supports 16-color ANSI terminal colors for both foreground and background. Export your drawings with ANSI escape codes and display them in any terminal.
+
+<p align="center">
+  <img alt="Terminal drawing with colors" src="./terminal-drawing.png">
+</p>
+
 ## Contributing
 
 ### Installation

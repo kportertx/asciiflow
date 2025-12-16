@@ -1,6 +1,6 @@
 import { ControlledDialog } from "#asciiflow/client/components/controlled_dialog";
 import { ControlledMenu } from "#asciiflow/client/components/controlled_menu";
-import { ASCII, UNICODE } from "#asciiflow/client/constants";
+import { ANSI_COLORS, ASCII, UNICODE } from "#asciiflow/client/constants";
 import styles from "#asciiflow/client/drawer.module.css";
 import { ExportDialog } from "#asciiflow/client/export";
 import { DrawingId, store, ToolMode } from "#asciiflow/client/store";
@@ -277,6 +277,14 @@ export function Drawer() {
                   >
                     <ShortcutChip label={"alt + 6"} hideUntilAlt={true} />
                   </ToolControl>
+                  
+                  <ListItem>
+                    <ListItemText>Colors</ListItemText>
+                    <ListItemSecondaryAction>
+                      <ShortcutChip label={"alt + shift + 1-4"} hideUntilAlt={true} />
+                    </ListItemSecondaryAction>
+                  </ListItem>
+                  <ColorPickerSection />
                 </>
               )}
               <ListItem>
@@ -505,6 +513,114 @@ function ToolHelp(
   return useWatchable(() => {
     return store.toolMode() === props.tool ? <>{props.children}</> : null;
   });
+}
+
+/**
+ * Color picker section for foreground and background colors.
+ */
+function ColorPickerSection() {
+  return useWatchable(() => {
+    const fgColor = store.currentFgColor.get();
+    const bgColor = store.currentBgColor.get();
+    
+    return (
+      <div style={{ padding: "0 16px 8px 16px" }}>
+        <div style={{ marginBottom: 8 }}>
+          <div style={{ fontSize: 12, color: "#888", marginBottom: 4 }}>
+            Foreground
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
+            <ColorSwatch
+              color={undefined}
+              selected={fgColor === undefined}
+              onClick={() => store.currentFgColor.set(undefined)}
+              label="Default"
+            />
+            {ANSI_COLORS.map((color, index) => (
+              <ColorSwatch
+                key={index}
+                color={color.hex}
+                selected={fgColor === index}
+                onClick={() => store.currentFgColor.set(index)}
+                label={color.name}
+              />
+            ))}
+          </div>
+        </div>
+        <div>
+          <div style={{ fontSize: 12, color: "#888", marginBottom: 4 }}>
+            Background
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
+            <ColorSwatch
+              color={undefined}
+              selected={bgColor === undefined}
+              onClick={() => store.currentBgColor.set(undefined)}
+              label="None"
+            />
+            {ANSI_COLORS.map((color, index) => (
+              <ColorSwatch
+                key={index}
+                color={color.hex}
+                selected={bgColor === index}
+                onClick={() => store.currentBgColor.set(index)}
+                label={color.name}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  });
+}
+
+/**
+ * A single color swatch button.
+ */
+function ColorSwatch({
+  color,
+  selected,
+  onClick,
+  label,
+}: {
+  color: string | undefined;
+  selected: boolean;
+  onClick: () => void;
+  label: string;
+}) {
+  const isDark = store.darkMode.get();
+  return (
+    <button
+      title={label}
+      onClick={onClick}
+      style={{
+        width: 18,
+        height: 18,
+        border: selected ? "2px solid #2196F3" : "1px solid #666",
+        borderRadius: 2,
+        cursor: "pointer",
+        backgroundColor: color ?? (isDark ? "#333" : "#fff"),
+        padding: 0,
+        boxSizing: "border-box",
+        position: "relative",
+      }}
+    >
+      {/* Show diagonal line for "default/none" option */}
+      {color === undefined && (
+        <div
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: "-2px",
+            right: "-2px",
+            height: 1,
+            backgroundColor: "#f00",
+            transform: "rotate(-45deg)",
+          }}
+        />
+      )}
+    </button>
+  );
 }
 
 function isValidDrawingName(name: string) {

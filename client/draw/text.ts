@@ -1,8 +1,19 @@
 import { Box } from "#asciiflow/client/common";
 import { AbstractDrawFunction } from "#asciiflow/client/draw/function";
-import { Layer } from "#asciiflow/client/layer";
+import { ICell, Layer } from "#asciiflow/client/layer";
 import { store, IModifierKeys } from "#asciiflow/client/store";
 import { Vector } from "#asciiflow/client/vector";
+
+/**
+ * Creates a cell with the current foreground and background colors.
+ */
+function cellWithColors(char: string): ICell {
+  return {
+    char,
+    fg: store.currentFgColor.get(),
+    bg: store.currentBgColor.get(),
+  };
+}
 
 export class DrawText extends AbstractDrawFunction {
   public currentPosition: Vector;
@@ -70,7 +81,7 @@ export class DrawText extends AbstractDrawFunction {
     }
 
     // Add the new text to the layer and move to the right.
-    this.textLayer.set(this.currentPosition, value);
+    this.textLayer.set(this.currentPosition, cellWithColors(value));
     this.currentPosition = this.currentPosition.right();
     store.currentCanvas.setScratchLayer(this.textLayer);
     store.currentCanvas.setSelection(

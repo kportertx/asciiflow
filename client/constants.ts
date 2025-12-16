@@ -135,3 +135,35 @@ export const KEY_RIGHT = "<right>";
 // http://stackoverflow.com/questions/4817029/whats-the-best-way-to-detect-a-touch-screen-device-using-javascript
 export const TOUCH_ENABLED = () => 
   "ontouchstart" in window || "onmsgesturechange" in window;
+
+/**
+ * 16 standard ANSI terminal colors.
+ * Index 0-7: normal colors, 8-15: bright variants.
+ */
+export interface IAnsiColor {
+  name: string;
+  fg: number;  // ANSI foreground code
+  bg: number;  // ANSI background code
+  hex: string; // Hex color for canvas rendering
+}
+
+export const ANSI_COLORS: IAnsiColor[] = [
+  // Normal colors (0-7)
+  { name: "Black", fg: 30, bg: 40, hex: "#000000" },
+  { name: "Red", fg: 31, bg: 41, hex: "#cc0000" },
+  { name: "Green", fg: 32, bg: 42, hex: "#00cc00" },
+  { name: "Yellow", fg: 33, bg: 43, hex: "#cccc00" },
+  { name: "Blue", fg: 34, bg: 44, hex: "#0000cc" },
+  { name: "Magenta", fg: 35, bg: 45, hex: "#cc00cc" },
+  { name: "Cyan", fg: 36, bg: 46, hex: "#00cccc" },
+  { name: "White", fg: 37, bg: 47, hex: "#cccccc" },
+  // Bright colors (8-15)
+  { name: "Bright Black", fg: 90, bg: 100, hex: "#666666" },
+  { name: "Bright Red", fg: 91, bg: 101, hex: "#ff0000" },
+  { name: "Bright Green", fg: 92, bg: 102, hex: "#00ff00" },
+  { name: "Bright Yellow", fg: 93, bg: 103, hex: "#ffff00" },
+  { name: "Bright Blue", fg: 94, bg: 104, hex: "#0000ff" },
+  { name: "Bright Magenta", fg: 95, bg: 105, hex: "#ff00ff" },
+  { name: "Bright Cyan", fg: 96, bg: 106, hex: "#00ffff" },
+  { name: "Bright White", fg: 97, bg: 107, hex: "#ffffff" },
+];

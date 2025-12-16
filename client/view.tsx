@@ -1,4 +1,6 @@
 import * as constants from "#asciiflow/client/constants";
+import { ANSI_COLORS } from "#asciiflow/client/constants";
+import { ICell } from "#asciiflow/client/layer";
 import { store } from "#asciiflow/client/store";
 import { Vector } from "#asciiflow/client/vector";
 import { autorun, useWatchable } from "#asciiflow/common/watchable";
@@ -153,11 +155,38 @@ function render(canvas: HTMLCanvasElement) {
     );
   }
 
-  function text(position: Vector, value: string) {
-    if (value !== null && value !== "" && value !== " ") {
-      context.fillStyle = colors.text;
+  /**
+   * Checks if a color index is valid (0-15).
+   */
+  function isValidColorIndex(colorIndex: number | undefined): colorIndex is number {
+    return typeof colorIndex === "number" && 
+           Number.isInteger(colorIndex) && 
+           colorIndex >= 0 && 
+           colorIndex < ANSI_COLORS.length;
+  }
+
+  /**
+   * Renders a cell's background color if set.
+   */
+  function renderCellBackground(position: Vector, cell: ICell) {
+    if (isValidColorIndex(cell.bg)) {
+      highlight(position, ANSI_COLORS[cell.bg].hex);
+    }
+  }
+
+  /**
+   * Renders a cell's text with foreground color.
+   */
+  function renderCellText(position: Vector, cell: ICell) {
+    if (cell.char !== null && cell.char !== "" && cell.char !== " ") {
+      // Use cell's foreground color if set, otherwise use theme default
+      if (isValidColorIndex(cell.fg)) {
+        context.fillStyle = ANSI_COLORS[cell.fg].hex;
+      } else {
+        context.fillStyle = colors.text;
+      }
       context.fillText(
-        value,
+        cell.char,
         position.x * constants.CHAR_PIXELS_H - offset.x,
         position.y * constants.CHAR_PIXELS_V - offset.y - 3
       );
@@ -174,14 +203,21 @@ function render(canvas: HTMLCanvasElement) {
       }
     }
   }
-  for (const [position, value] of committed.entries()) {
-    const cellValue = committed.get(position);
-    text(position, cellValue);
+
+  // Render committed layer cells
+  for (const [position, cell] of committed.cellEntries()) {
+    renderCellBackground(position, cell);
+    renderCellText(position, cell);
   }
-  for (const [position] of scratch.entries()) {
+
+  // Render scratch layer cells (in-progress drawing)
+  for (const [position, cell] of scratch.cellEntries()) {
+    // First highlight with the scratch highlight color
     highlight(position, colors.highlight);
-    const cellValue = scratch.get(position);
-    text(position, cellValue);
+    // Then render background color on top if set
+    renderCellBackground(position, cell);
+    // Finally render the text
+    renderCellText(position, cell);
   }
 
   if (!!selection) {

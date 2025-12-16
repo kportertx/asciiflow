@@ -1,6 +1,6 @@
 import { CellContext } from "#asciiflow/client/common";
 import { Characters } from "#asciiflow/client/constants";
-import { ILayerView } from "#asciiflow/client/layer";
+import { ICell, ILayerView } from "#asciiflow/client/layer";
 import { Vector } from "#asciiflow/client/vector";
 import * as constants from "#asciiflow/client/constants";
 
@@ -13,6 +13,24 @@ export class LegacyRenderLayer implements ILayerView {
   public entries() {
     return this.keys().map((key) => [key, this.get(key)] as [Vector, string]);
   }
+
+  public cellEntries(): [Vector, ICell][] {
+    return this.keys().map((key) => [key, this.getCell(key)] as [Vector, ICell]);
+  }
+
+  getCell(position: Vector): ICell | null {
+    const char = this.get(position);
+    if (char === null) return null;
+    // LegacyRenderLayer transforms characters but doesn't handle colors,
+    // so we get color info from the base layer if available
+    const baseCell = this.baseLayer.getCell(position);
+    return {
+      char,
+      fg: baseCell?.fg,
+      bg: baseCell?.bg,
+    };
+  }
+
   get(position: Vector): string {
     const characterSet = constants.UNICODE;
 

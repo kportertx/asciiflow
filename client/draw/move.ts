@@ -3,7 +3,7 @@ import * as constants from "#asciiflow/client/constants";
 import { isSpecial } from "#asciiflow/client/constants";
 import { Direction } from "#asciiflow/client/direction";
 import { AbstractDrawFunction } from "#asciiflow/client/draw/function";
-import { Layer } from "#asciiflow/client/layer";
+import { ICell, Layer } from "#asciiflow/client/layer";
 import { store } from "#asciiflow/client/store";
 import { Vector } from "#asciiflow/client/vector";
 
@@ -81,25 +81,40 @@ export class DrawMove extends AbstractDrawFunction {
     for (const position of this.trace.positions) {
       layer.set(position, "");
     }
-    // Move the line.
+    // Move the line, preserving colors.
     for (const position of this.trace.positions) {
-      layer.set(
-        position.add(moveDirection.scale(moveUnits)),
-        store.currentCanvas.committed.get(position)
-      );
+      const cell = store.currentCanvas.committed.getCell(position);
+      if (cell) {
+        layer.setCell(position.add(moveDirection.scale(moveUnits)), cell);
+      } else {
+        layer.set(
+          position.add(moveDirection.scale(moveUnits)),
+          store.currentCanvas.committed.get(position)
+        );
+      }
     }
     // Extend any attachments that need to be extended.
     for (const attachment of this.trace.attachments) {
       if (attachment.direction === moveDirection.opposite()) {
-        for (let i = 1; i <= moveUnits; i++) {
-          // TODO: Deal with arrows.
-          layer.set(
-            attachment.source.add(attachment.direction.scale(-i)),
-            attachment.direction === Direction.LEFT ||
-              attachment.direction === Direction.RIGHT
+        // Get the color from the source cell to apply to extended segments
+        const sourceCell = store.currentCanvas.committed.getCell(attachment.source);
+        const extendChar = attachment.direction === Direction.LEFT ||
+            attachment.direction === Direction.RIGHT
               ? constants.UNICODE.lineHorizontal
-              : constants.UNICODE.lineVertical
-          );
+              : constants.UNICODE.lineVertical;
+        
+        for (let i = 1; i <= moveUnits; i++) {
+          if (sourceCell) {
+            layer.setCell(
+              attachment.source.add(attachment.direction.scale(-i)),
+              { char: extendChar, fg: sourceCell.fg, bg: sourceCell.bg }
+            );
+          } else {
+            layer.set(
+              attachment.source.add(attachment.direction.scale(-i)),
+              extendChar
+            );
+          }
         }
       }
     }

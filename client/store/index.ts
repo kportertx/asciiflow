@@ -110,6 +110,10 @@ export class Store {
 
   public readonly freeformCharacter = watchableValue("x");
 
+  // Current drawing colors (undefined = theme default / transparent)
+  public readonly currentFgColor = watchableValue<number | undefined>(undefined);
+  public readonly currentBgColor = watchableValue<number | undefined>(undefined);
+
   public readonly selectedToolMode = watchableValue(ToolMode.BOX);
 
   public toolMode(): ToolMode | undefined {

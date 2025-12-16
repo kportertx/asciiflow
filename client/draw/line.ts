@@ -8,11 +8,34 @@ import { UNICODE } from "#asciiflow/client/constants";
 import { Direction } from "#asciiflow/client/direction";
 import { AbstractDrawFunction } from "#asciiflow/client/draw/function";
 import { line } from "#asciiflow/client/draw/utils";
-import { Layer, LayerView } from "#asciiflow/client/layer";
+import { ICell, Layer, LayerView } from "#asciiflow/client/layer";
 import { cellContext } from "#asciiflow/client/render_layer";
 import { snap } from "#asciiflow/client/snap";
 import { IModifierKeys, store } from "#asciiflow/client/store";
 import { Vector } from "#asciiflow/client/vector";
+
+/**
+ * Creates a cell with the current foreground and background colors.
+ */
+function cellWithColors(char: string): ICell {
+  return {
+    char,
+    fg: store.currentFgColor.get(),
+    bg: store.currentBgColor.get(),
+  };
+}
+
+/**
+ * Updates a cell's character while preserving colors (or using current colors if no existing cell).
+ */
+function updateCellChar(layer: Layer, position: Vector, newChar: string) {
+  const existingCell = layer.getCell(position);
+  if (existingCell) {
+    layer.setCell(position, { ...existingCell, char: newChar });
+  } else {
+    layer.set(position, cellWithColors(newChar));
+  }
+}
 
 export class DrawLine extends AbstractDrawFunction {
   private startPosition: Vector;
@@ -63,34 +86,37 @@ export class DrawLine extends AbstractDrawFunction {
       (horizontalStart || verticalEnd) !==
       (modifierKeys.ctrl || modifierKeys.shift);
 
-    layer.setFrom(line(this.startPosition, this.endPosition, horizontalFirst));
+    // Get the base line layer and add colors to it
+    const baseLine = line(this.startPosition, this.endPosition, horizontalFirst);
+    for (const [pos, char] of baseLine.entries()) {
+      layer.set(pos, cellWithColors(char));
+    }
 
     if (this.isArrow) {
-      layer.set(
-        this.endPosition,
-        (() => {
-          if (this.endPosition.x === this.startPosition.x) {
-            return this.endPosition.y < this.startPosition.y
-              ? characters.arrowUp
-              : characters.arrowDown;
-          }
-          if (this.endPosition.y === this.startPosition.y) {
-            return this.endPosition.x < this.startPosition.x
-              ? characters.arrowLeft
-              : characters.arrowRight;
-          }
-          if (horizontalFirst) {
-            return this.endPosition.y < this.startPosition.y
-              ? characters.arrowUp
-              : characters.arrowDown;
-          } else {
-            return this.endPosition.x > this.startPosition.x
-              ? characters.arrowRight
-              : characters.arrowLeft;
-          }
-        })()
-      );
+      const arrowChar = (() => {
+        if (this.endPosition.x === this.startPosition.x) {
+          return this.endPosition.y < this.startPosition.y
+            ? characters.arrowUp
+            : characters.arrowDown;
+        }
+        if (this.endPosition.y === this.startPosition.y) {
+          return this.endPosition.x < this.startPosition.x
+            ? characters.arrowLeft
+            : characters.arrowRight;
+        }
+        if (horizontalFirst) {
+          return this.endPosition.y < this.startPosition.y
+            ? characters.arrowUp
+            : characters.arrowDown;
+        } else {
+          return this.endPosition.x > this.startPosition.x
+            ? characters.arrowRight
+            : characters.arrowLeft;
+        }
+      })();
+      layer.set(this.endPosition, cellWithColors(arrowChar));
     }
+    
     // Start or end characters may not just be lines, if adjacent cells have any incoming connections
     // then we connect to them, and then remove any unnecessary connections (if possible).
     const combined = new LayerView([store.currentCanvas.committed, layer]);
@@ -104,8 +130,9 @@ export class DrawLine extends AbstractDrawFunction {
             direction.opposite()
           ) && connectable(layer.get(position), direction)
       );
-      layer.set(position, connect(layer.get(position), incomingConnections));
-      layer.set(
+      updateCellChar(layer, position, connect(layer.get(position), incomingConnections));
+      updateCellChar(
+        layer,
         position,
         disconnect(
           layer.get(position),
@@ -116,7 +143,16 @@ export class DrawLine extends AbstractDrawFunction {
       );
     }
 
-    layer.setFrom(snap(layer, store.currentCanvas.committed));
+    // Apply snap adjustments while preserving colors
+    const snapped = snap(layer, store.currentCanvas.committed);
+    for (const [pos, char] of snapped.entries()) {
+      const existingCell = layer.getCell(pos);
+      if (existingCell) {
+        layer.setCell(pos, { ...existingCell, char });
+      } else {
+        layer.set(pos, cellWithColors(char));
+      }
+    }
 
     store.currentCanvas.setScratchLayer(layer);
   }

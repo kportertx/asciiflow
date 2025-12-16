@@ -70,24 +70,42 @@ export class Controller {
 
     if (event.altKey) {
       store.altPressed.set(true);
-      if (event.keyCode === "1".charCodeAt(0)) {
-        store.setToolMode(ToolMode.BOX);
-        event.preventDefault();
-      } else if (event.keyCode === "2".charCodeAt(0)) {
-        store.setToolMode(ToolMode.SELECT);
-        event.preventDefault();
-      } else if (event.keyCode === "3".charCodeAt(0)) {
-        store.setToolMode(ToolMode.FREEFORM);
-        event.preventDefault();
-      } else if (event.keyCode === "4".charCodeAt(0)) {
-        store.setToolMode(ToolMode.ARROWS);
-        event.preventDefault();
-      } else if (event.keyCode === "5".charCodeAt(0)) {
-        store.setToolMode(ToolMode.LINES);
-        event.preventDefault();
-      } else if (event.keyCode === "6".charCodeAt(0)) {
-        store.setToolMode(ToolMode.TEXT);
-        event.preventDefault();
+      // Alt+Shift+1-4: Set foreground color (primary colors)
+      if (event.shiftKey) {
+        if (event.keyCode === "1".charCodeAt(0)) {
+          store.currentFgColor.set(1); // Red
+          event.preventDefault();
+        } else if (event.keyCode === "2".charCodeAt(0)) {
+          store.currentFgColor.set(2); // Green
+          event.preventDefault();
+        } else if (event.keyCode === "3".charCodeAt(0)) {
+          store.currentFgColor.set(3); // Yellow
+          event.preventDefault();
+        } else if (event.keyCode === "4".charCodeAt(0)) {
+          store.currentFgColor.set(4); // Blue
+          event.preventDefault();
+        }
+      } else {
+        // Alt+1-6: Select tool
+        if (event.keyCode === "1".charCodeAt(0)) {
+          store.setToolMode(ToolMode.BOX);
+          event.preventDefault();
+        } else if (event.keyCode === "2".charCodeAt(0)) {
+          store.setToolMode(ToolMode.SELECT);
+          event.preventDefault();
+        } else if (event.keyCode === "3".charCodeAt(0)) {
+          store.setToolMode(ToolMode.FREEFORM);
+          event.preventDefault();
+        } else if (event.keyCode === "4".charCodeAt(0)) {
+          store.setToolMode(ToolMode.ARROWS);
+          event.preventDefault();
+        } else if (event.keyCode === "5".charCodeAt(0)) {
+          store.setToolMode(ToolMode.LINES);
+          event.preventDefault();
+        } else if (event.keyCode === "6".charCodeAt(0)) {
+          store.setToolMode(ToolMode.TEXT);
+          event.preventDefault();
+        }
       }
     }
     if (event.ctrlKey || event.metaKey) {

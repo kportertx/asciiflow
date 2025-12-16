@@ -73,9 +73,10 @@ export class DrawSelect extends AbstractDrawFunction {
 
     const selectionLayer = new Layer();
 
-    store.currentCanvas.committed.entries().forEach(([key, value]) => {
+    // Use cellEntries to preserve colors
+    store.currentCanvas.committed.cellEntries().forEach(([key, cell]) => {
       if (this.selectBox.contains(key)) {
-        selectionLayer.set(key, value);
+        selectionLayer.setCell(key, cell);
       }
     });
 
@@ -96,19 +97,28 @@ export class DrawSelect extends AbstractDrawFunction {
     const layer = new Layer();
 
     // Erase existing drawing.
-    store.currentCanvas.committed.entries().forEach(([key]) => {
+    store.currentCanvas.committed.cellEntries().forEach(([key]) => {
       if (this.selectBox.contains(key)) {
         layer.set(key, "");
       }
     });
-    // Move characters.
-    store.currentCanvas.committed.entries().forEach(([key, value]) => {
+    // Move characters with colors preserved.
+    store.currentCanvas.committed.cellEntries().forEach(([key, cell]) => {
       if (this.selectBox.contains(key)) {
-        layer.set(key.add(moveDelta), value);
+        layer.setCell(key.add(moveDelta), cell);
       }
     });
 
-    layer.setFrom(snap(layer, store.currentCanvas.committed));
+    // Apply snap adjustments - need to preserve colors
+    const snapped = snap(layer, store.currentCanvas.committed);
+    for (const [pos, char] of snapped.entries()) {
+      const existingCell = layer.getCell(pos);
+      if (existingCell && existingCell.char !== char) {
+        layer.setCell(pos, { ...existingCell, char });
+      } else if (!existingCell) {
+        layer.set(pos, char);
+      }
+    }
 
     store.currentCanvas.setScratchLayer(layer);
   }
@@ -151,13 +161,22 @@ export class DrawSelect extends AbstractDrawFunction {
       }
       if (value === KEY_CUT) {
         const layer = new Layer();
-        store.currentCanvas.committed.entries().forEach(([key]) => {
+        store.currentCanvas.committed.cellEntries().forEach(([key]) => {
           if (this.selectBox.contains(key)) {
             layer.set(key, "");
           }
         });
 
-        layer.setFrom(snap(layer, store.currentCanvas.committed));
+        // Apply snap adjustments
+        const snapped = snap(layer, store.currentCanvas.committed);
+        for (const [pos, char] of snapped.entries()) {
+          const existingCell = layer.getCell(pos);
+          if (existingCell && existingCell.char !== char) {
+            layer.setCell(pos, { ...existingCell, char });
+          } else if (!existingCell) {
+            layer.set(pos, char);
+          }
+        }
 
         store.currentCanvas.setScratchLayer(layer);
         store.currentCanvas.commitScratch();
@@ -165,13 +184,22 @@ export class DrawSelect extends AbstractDrawFunction {
     }
     if (value === KEY_BACKSPACE || value === KEY_DELETE) {
       const layer = new Layer();
-      store.currentCanvas.committed.entries().forEach(([key]) => {
+      store.currentCanvas.committed.cellEntries().forEach(([key]) => {
         if (this.selectBox.contains(key)) {
           layer.set(key, "");
         }
       });
 
-      layer.setFrom(snap(layer, store.currentCanvas.committed));
+      // Apply snap adjustments
+      const snapped = snap(layer, store.currentCanvas.committed);
+      for (const [pos, char] of snapped.entries()) {
+        const existingCell = layer.getCell(pos);
+        if (existingCell && existingCell.char !== char) {
+          layer.setCell(pos, { ...existingCell, char });
+        } else if (!existingCell) {
+          layer.set(pos, char);
+        }
+      }
 
       store.currentCanvas.setScratchLayer(layer);
       store.currentCanvas.commitScratch();
